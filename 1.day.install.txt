@@ -1,0 +1,17 @@
+yum remove mysql
+
+tar zxvf mysql-5.1.72_source.tar.gz 
+cd mysql-5.1.72
+export bpath="/home/mysql/mysql"
+cd mysql-5.1.72
+./configure --prefix=${bpath} --with-unix-socket-path=${bpath}/tmp/mysql.sock \
+	 --with-plugins=partition,cvs,archive,federated,innobase,innodb_plugin,myisam,headp \
+	 --with-charset=utf8 \
+	 --without-docs \
+	 --without-man \
+	 --with-client-ldflasgs=-static'CFLAGS=-g-O3'CXXFLAGS=-g-O3' \
+	 --with-extra-charasets=gbk,utf8,ascii,big5,latin1,binary \
+	 --enable-assembler \
+	 --enable-local-infile \
+	 --enable-profiling \
+	 --enable-thread-safe-client
