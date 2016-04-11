@@ -1,0 +1,52 @@
+使用mysql binlog回复数据:
+1.要求:
+在业务正常运转中不小心drop database sakila;
+保证drop databse恢复,之前的数据恢复,之后的数据恢复
+停机时间尽量短
+
+2.打流量:
+./sysbench --test=oltp --mysql-user=root --mysql-password=root --mysql-host=127.0.0.1 --mysql-port=5172 --mysql-db=test --oltp-table-name=t1 prepare
+
+./sysbench --test=oltp --mysql-user=root --mysql-password=root --mysql-host =127.0.0.1 --mysql-port=5172 --mysql-db=test --oltp-table-name=t1 --num-threads=10 run
+
+通过全日志查看打流量情况:
+tail -f  mysql.log
+=============================================================================
+2.正式流程
+2-1 冷备11点
+cd /home/mysql/mysql/var /home/mysql/mysql/var_bak
+
+2-2 drop databse sakila 11点30
+
+2-3 找binlog drop database sakila的binlog 点位
+mysqlbinlog --base64-output=decode-rows -v -v -v mysql-bin.000044 > /tmp/44.txt
+找到drop database sakila;的点位是  var/mysql-bin.000044 at747775
+
+2-4 先恢复到11点的数据
+mysql.server stop
+cd /home/mysql/mysql && mv var var_old
+mv var_bak var
+
+2-5 my.cnf:禁止网络访问
+skip-networking
+
+2-6 查看是否sakila数据库已经恢复
+mysql.server start
+mysql -uroot -proot -e "use sakila;show tables;"
+
+2-5 导出drop database 之前和之后的数据,恢复增量数据
+./bin/mysqlbinlog --stop-position=747775  var/mysql-bin.000044 > /tmp/1.sql
+./bin/mysqlbinlog --start-position=747860  var/mysql-bin.000044 > /tmp/2.sql
+mysql -uroot -proot -v -v -v -e "warnings;source /tmp/1.sql;" &>/tmp/1.err
+mysql -uroot -proot -v -v -v -e "warnings;source /tmp/2.sql;" &>/tmp/2.err
+
+grep -i WARNING /tmp/1.err
+grep -i ERROR/tmp/1.err
+grep -i WARNING /tmp/2.err
+grep -i ERROR/tmp/2.err
+
+2-6 正常提供服务
+my.cnf
+#skip-networking
+mysql.server restart
+
