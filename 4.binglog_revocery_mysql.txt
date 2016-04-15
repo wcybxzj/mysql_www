@@ -14,7 +14,7 @@ tail -f  mysql.log
 =============================================================================
 2.正式流程
 2-1 冷备11点
-cd /home/mysql/mysql/var /home/mysql/mysql/var_bak
+cp /home/mysql/mysql/var /home/mysql/mysql/var_bak
 
 2-2 drop databse sakila 11点30
 
@@ -24,7 +24,7 @@ mysqlbinlog --base64-output=decode-rows -v -v -v mysql-bin.000044 > /tmp/44.txt
 
 2-4 先恢复到11点的数据
 mysql.server stop
-cd /home/mysql/mysql && mv var var_old
+cp /home/mysql/mysql && mv var var_old
 mv var_bak var
 
 2-5 my.cnf:禁止网络访问
