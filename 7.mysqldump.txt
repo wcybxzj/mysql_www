@@ -1,0 +1,4 @@
+./bin/mysqldump test t1 -uroot -proot --default-character-set=utf8 --hex-blob --routi
+nes --triggers  --single-transaction > /tmp/t1.sql
+
+cat /tmp/t1.sql | mysql  -uroot -proot test

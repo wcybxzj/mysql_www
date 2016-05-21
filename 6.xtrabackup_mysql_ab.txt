@@ -1,0 +1,58 @@
+xtrabackup:
+mkdir -p /home/mysql/base/
+全量备份用法：
+xtrabackup --defaults-file=/home/mysql/mysql/etc/my.cnf --backup --target-dir=/home/mysql/base/
+全量恢复用法：
+xtrabackup --defaults-file=/home/mysql/mysql/etc/my.cnf --prepare --target-dir=/home/mysql/base/
+
+关库替换仅innodb的数据文件目录就是那个库换那个，别动任何其他
+\cp -rf /home/mysql/base/ /home/mysql/mysql/var/
+chown -R mysql.mysql /home/mysql/mysql/var/
+=================================================================
+xtrabackup增量:
+xtrabackup  --defaults-file=/home/mysql/mysql/etc/my.cnf \
+--backup \
+--target-dir=/home/mysql/incremental \
+--incremental-basedir=/home/mysql/base/
+=================================================================
+=================================================================
+=================================================================
+=================================================================
+innobackupex:
+mkdir -p /home/mysql/backup/
+全量备份：
+innobackupex \
+--user=root \
+--password=root \
+--defaults-file=/home/mysql/mysql/etc/my.cnf \
+--no-lock \
+--no-timestamp /home/mysql/backup/full
+
+应用redo
+innobackupex \
+--apply-log \
+--user=root \
+--password=root \
+--defaults-file=/home/mysql/mysql/etc/my.cnf \
+--no-lock \
+/home/mysql/backup/full 
+
+恢复
+innobackupex \
+--user=root \
+--password=root \
+--defaults-file=/home/mysql/mysql/etc/my.cnf \
+--copy-back \
+/home/mysql/backup/full 
+
+
+===============================================================
+主创建同步账号
+grant replication slave on *.* to 'repl'@'192.168.91.151' identified by 'root';
+
+grant replication slave on *.* to 'repl'@'192.168.91.%' identified by 'root';
+
+从
+CHANGE MASTER TO MASTER_HOST='192.168.91.150',  MASTER_USER='repl',MASTER_PASSWORD='root',MASTER_PORT=5621, MASTER_LOG_FILE='mysql-bin.000022', MASTER_LOG_POS=120, MASTER_CONNECT_RETRY=10;
+
+CHANGE MASTER TO MASTER_HOST='192.168.91.151',  MASTER_USER='repl',MASTER_PASSWORD='root',MASTER_PORT=5621, MASTER_LOG_FILE='mysql-bin.000020', MASTER_LOG_POS=331, MASTER_CONNECT_RETRY=10;

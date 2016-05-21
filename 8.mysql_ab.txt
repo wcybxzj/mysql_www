@@ -1,0 +1,54 @@
+主创建同步账号
+grant replication slave on *.* to 'repl'@'192.168.91.151' identified by 'root';
+
+grant replication slave on *.* to 'repl'@'%' identified by 'root';
+
+从
+CHANGE MASTER TO MASTER_HOST='192.168.91.161',  MASTER_USER='repl',MASTER_PASSWORD='root',MASTER_PORT=5621, MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=16135, MASTER_CONNECT_RETRY=10;
+
+start slave;
+show slave status\G;看到如下说明同步正常启动
+Slave_IO_Running: Yes
+Slave_SQL_Running: Yes
+主从上各show porcesslist;
+
+----------------------------------------------------------------
+普通级联
+1.在master打流量
+./sysbench --test=oltp --mysql-user=root --mysql-password=root --mysql-host=127.0.0.1 --mysql-port=5621 --mysql-db=d1 --oltp-table-name=t1 prepare
+./sysbench --test=oltp --mysql-user=root --mysql-password=root --mysql-db=test --mysql-host=127.0.0.1 --mysql-port=5621 --oltp-table-name=t1 --num-threads=10 run
+
+
+2.在s1先打开bin_log,并且my.ini:log_slave_updates=ON
+
+3.然后xtrabackup,把数据拷贝到s4
+mkdir -p /home/mysql/base/
+全量备份用法：
+xtrabackup --defaults-file=/home/mysql/mysql/etc/my.cnf --backup --target-dir=/home/mysql/base/
+全量恢复用法：
+xtrabackup --defaults-file=/home/mysql/mysql/etc/my.cnf --prepare --target-dir=/home/mysql/base/
+
+CHANGE MASTER TO MASTER_HOST='192.168.91.151',  MASTER_USER='repl',MASTER_PASSWORD='root',MASTER_PORT=5621, MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=36676, MASTER_CONNECT_RETRY=10;
+----------------------------------------------------------------
+级联上拉
+master 打流量
+for i in {116..200}
+do
+	mysql5621 -e "insert into d1.t1 values($i)";
+	sleep 3;
+	echo $i;
+done
+CHANGE MASTER TO MASTER_HOST='192.168.91.159',  MASTER_USER='repl',MASTER_PASSWORD='root',MASTER_PORT=5621, MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=36676, MASTER_CONNECT_RETRY=10;
+
+----------------------------------------------------------------
+级联下拉
+
+
+slave1:192.168.1.106
+my.ini:
+--log-slave-updates
+CHANGE MASTER TO MASTER_HOST='192.168.1.107',  MASTER_USER='repl',MASTER_PASSWORD='root',MASTER_PORT=5621, MASTER_LOG_FILE='mysql-bin.000004', MASTER_LOG_POS=208, MASTER_CONNECT_RETRY=10;
+
+slave2:192.168.1.107
+CHANGE MASTER TO MASTER_HOST='192.168.1.106',  MASTER_USER='repl',MASTER_PASSWORD='root',MASTER_PORT=5621, MASTER_LOG_FILE='mysql-bin.000005', MASTER_LOG_POS=322, MASTER_CONNECT_RETRY=10;
+

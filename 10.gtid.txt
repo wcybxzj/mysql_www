@@ -1,0 +1,19 @@
+´Ó¿â
+stop slave;
+reset slave;
+
+change master to master_host='192.168.91.159',
+			master_port=5621,
+			master_user='repl',
+			master_password='root',
+			master_auto_position=1;
+			
+
+CHANGE MASTER TO 
+	MASTER_HOST='192.168.91.159',  
+	MASTER_USER='repl',
+	MASTER_PASSWORD='root',
+	MASTER_PORT=5621, 
+	MASTER_LOG_FILE='mysql-bin.000004', 
+	MASTER_LOG_POS=401, 
+	MASTER_CONNECT_RETRY=10;

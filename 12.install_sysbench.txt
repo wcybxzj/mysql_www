@@ -1,0 +1,17 @@
+yum install gcc
+yum install libtool
+
+解压后执行 ./autogen.sh
+
+vim 源码目录下的configure.ac文件：
+注释掉AC_PROG_LIBTOOL
+增加AC_PROG_RANLIB
+
+./configure --prefix=/home/mysql/sysbench \
+	--with-mysql-includes=/home/mysql/mysql/include/ \
+	--with-mysql-libs=/home/mysql/mysql/lib/
+
+make
+
+make install
+

@@ -5,9 +5,9 @@
 停机时间尽量短
 
 2.打流量:
-./sysbench --test=oltp --mysql-user=root --mysql-password=root --mysql-host=127.0.0.1 --mysql-port=5172 --mysql-db=test --oltp-table-name=t1 prepare
+./sysbench --test=oltp --mysql-user=root --mysql-password=root --mysql-host=127.0.0.1 --mysql-port=5621 --mysql-db=test --oltp-table-name=t1 prepare
 
-./sysbench --test=oltp --mysql-user=root --mysql-password=root --mysql-host =127.0.0.1 --mysql-port=5172 --mysql-db=test --oltp-table-name=t1 --num-threads=10 run
+./sysbench --test=oltp --mysql-user=root --mysql-password=root --mysql-db=test --mysql-host=127.0.0.1 --mysql-port=5621 --oltp-table-name=t1 --num-threads=10 run
 
 通过全日志查看打流量情况:
 tail -f  mysql.log
