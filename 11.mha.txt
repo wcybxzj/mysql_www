@@ -1,5 +1,11 @@
 要先关闭gtid相关所有配置
 
+export PERLBREW_ROOT=/usr/local/perl5
+source /usr/local/perl5/etc/bashrc
+export PATH=/usr/local/perl5/perls/perl-5.18.2/bin:$PATH
+
+
+
 1.
 mkdir /etc/masterha
 mkdir -p /masterha/app1
@@ -44,6 +50,5 @@ ssh-copy-id -i /root/.ssh/id_rsa.pub root@192.168.91.158
 	grant all on root@${node1_ip} identified by ‘123456’;
 	grant all on root@${node2_ip} identified by ‘123456’;
 
-
-nohup?masterha_manager?--conf=/etc/masterha/app1.cnf??&>/dev/null &
+nohup masterha_manager --conf=/etc/masterha/app1.cnf &> /dev/null &
 

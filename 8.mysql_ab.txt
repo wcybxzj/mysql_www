@@ -4,7 +4,7 @@ grant replication slave on *.* to 'repl'@'192.168.91.151' identified by 'root';
 grant replication slave on *.* to 'repl'@'%' identified by 'root';
 
 从
-CHANGE MASTER TO MASTER_HOST='192.168.91.161',  MASTER_USER='repl',MASTER_PASSWORD='root',MASTER_PORT=5621, MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=16135, MASTER_CONNECT_RETRY=10;
+CHANGE MASTER TO MASTER_HOST='192.168.91.161',  MASTER_USER='repl',MASTER_PASSWORD='root',MASTER_PORT=5621, MASTER_LOG_FILE='mysql-bin.000005', MASTER_LOG_POS=1322777, MASTER_CONNECT_RETRY=10;
 
 start slave;
 show slave status\G;看到如下说明同步正常启动
