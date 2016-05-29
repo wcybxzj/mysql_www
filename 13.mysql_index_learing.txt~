@@ -1,0 +1,48 @@
+CREATE TABLE `my_test` (
+  `id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
+  `a` int(10) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_a` (`a`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+
+insert into my_test values(1,3),(2,5),(3,1),(4,10),(5,9);
+
+select distinct emp_no,from_date,dept_no from dept_emp a, 
+	(select min(from_date) min_date from dept_emp group by dept_no)b 
+	where a.from_date=b.min_date;
+
++--------+------------+
+| emp_no | from_date  |
++--------+------------+
+| 110022 | 1985-01-01 |
+| 110085 | 1985-01-01 |
+| 110183 | 1985-01-01 |
+| 110303 | 1985-01-01 |
+| 110511 | 1985-01-01 |
+| 110725 | 1985-01-01 |
+| 111035 | 1985-01-01 |
+| 111400 | 1985-01-01 |
+| 111692 | 1985-01-01 |
++--------+------------+
+
+
+select * from dept_emp where
+emp_no in(
+110022 ,
+ 110085 ,
+ 110183 ,
+ 110303 ,
+ 110511 ,
+110725 ,
+ 111035 ,
+ 111400 ,
+ 111692);
+
+
+
+select cust_id from orders where order_num in (
+	select order_num from orderitems where prod_id='TNT2');
+
+
+select cust_id,
