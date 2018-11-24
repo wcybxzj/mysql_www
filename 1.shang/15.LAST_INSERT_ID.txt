@@ -1,0 +1,23 @@
+这里是用的phpmyadmin 多条语句是在1个mysql连接上执行的
+3个终端的命令式顺序执行
+
+终端1:
+show create TABLE `userinfo`;
+
+CREATE TABLE `userinfo` (
+ `uid` int(10) NOT NULL AUTO_INCREMENT,
+ `username` varchar(64) DEFAULT NULL,
+ `department` varchar(64) DEFAULT NULL,
+ `created` date DEFAULT NULL,
+ PRIMARY KEY (`uid`)
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4;
+
+==========================================================
+终端2:
+INSERT INTO `userinfo` (`uid`, `username`, `department`, `created`) VALUES (NULL, NULL, NULL, NULL);
+select sleep(20);
+SELECT LAST_INSERT_ID();//返回50
+==========================================================
+终端3:
+INSERT INTO `userinfo` (`uid`, `username`, `department`, `created`) VALUES (NULL, NULL, NULL, NULL);
+SELECT LAST_INSERT_ID();//返回51
