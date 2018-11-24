@@ -1,0 +1,43 @@
+起因:是开源的长转短服务,4台机器但是只布置了1台读写+3台只读,所以想研究下是否可以4台都布置成读写
+结论:完全可以
+这里是用的phpmyadmin 多条语句是在1个mysql连接上执行的
+3个终端的命令式顺序执行
+
+================================================================================================
+并发replace+lastinsert语句有3种执行关系:
+
+第一种关系顺序:(ok)
+终端1:replace+lastinsert + 终端2:replace+lastinsert + 终端3:replace+lastinsert  这样串行
+
+第二种关系交替:(ok)
+终端1:REPLACE + 终端2:REPLACE + 终端1:SELECT LAST_INSERT_ID(); + 终端2:SELECT LAST_INSERT_ID();
+
+第三种关系嵌套:(ok)
+终端1:REPLACE
+终端2:REPLACE
+终端2:SELECT LAST_INSERT_ID();
+终端1:SELECT LAST_INSERT_ID();
+================================================================================================
+第二种关系交替的实验:
+终端1:
+show create TABLE `sequence`;
+CREATE TABLE `sequence` (
+ `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+ `stub` varchar(32) NOT NULL,
+ `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ PRIMARY KEY (`id`),
+ UNIQUE KEY `idx_uniq_sequence_stub` (`stub`)
+) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+
+
+终端2:
+REPLACE INTO sequence(stub) VALUES ('sequence');
+select sleep(20);
+SELECT LAST_INSERT_ID();
+//输出5
+
+
+终端3:
+REPLACE INTO sequence(stub) VALUES ('sequence');
+SELECT LAST_INSERT_ID();
+//输出6
