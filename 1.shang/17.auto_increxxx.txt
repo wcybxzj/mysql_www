@@ -1,0 +1,33 @@
+auto_increment_increment控制列中的值的增量值，也就是步长。
+auto_increment_offset确定AUTO_INCREMENT列值的起点，也就是初始值。
+最最重要的这个可以影响到REPLACE
+
+
+
+mysql> show variables like '%auto_incre%';
++--------------------------+-------+
+| Variable_name            | Value |
++--------------------------+-------+
+| auto_increment_increment | 5     |
+| auto_increment_offset    | 1     |
++--------------------------+-------+
+
+
+mysql> REPLACE INTO sequence(stub) VALUES ('sequence');
+Query OK, 2 rows affected (0.08 sec)
+
+mysql> select * from sequence;
++----+----------+---------------------+
+| id | stub     | timestamp           |
++----+----------+---------------------+
+| 11 | sequence | 2018-11-26 17:03:16 |
++----+----------+---------------------+
+1 row in set (0.00 sec)
+
+mysql> select * from sequence;
++----+----------+---------------------+
+| id | stub     | timestamp           |
++----+----------+---------------------+
+| 11 | sequence | 2018-11-26 17:03:16 |
++----+----------+---------------------+
+
