@@ -1,0 +1,5 @@
+事务:
+核心关注点是多个操作的原子性
+
+select for update:
+在事务中对读取数据进行加锁,事务提交前其他事务无法用select for update 进行读取

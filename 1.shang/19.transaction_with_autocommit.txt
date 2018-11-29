@@ -1,0 +1,26 @@
+自动提交对事务的影响
+
+create table tab_kx(a int auto_increment,primary key(a));
+========================================================
+session1:
+set autocommit=0;
+select * from tab_kx;
+Empty set (0.00 sec)
+========================================================
+session2:
+begin;
+INSERT INTO `tab_kx` (`a`) VALUES (NULL);
+commit;
+========================================================
+session1:
+select * from tab_kx;
+Empty set (0.00 sec)
+
+commit;
+
+mysql> select * from tab_kx;
++---+
+| a |
++---+
+| 1 |
++---+

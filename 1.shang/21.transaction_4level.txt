@@ -1,0 +1,312 @@
+一、事务的基本要素（ACID）
+1、原子性（Atomicity）：
+事务开始后所有操作，要么全部做完，要么全部不做，不可能停滞在中间环节。
+事务执行过程中出错，会回滚到事务开始前的状态，所有的操作就像没有发生一样。
+也就是说事务是一个不可分割的整体，就像化学中学过的原子，是物质构成的基本单位。
+2、一致性（Consistency）：
+事务开始前和结束后，数据库的完整性约束没有被破坏 。
+比如A向B转账，不可能A扣了钱，B却没收到。
+3、隔离性（Isolation）：
+同一时间，只允许一个事务请求同一数据，不同的事务之间彼此没有任何干扰。
+比如A正在从一张银行卡中取钱，在A取钱的过程结束前，B不能向这张卡转账。
+4、持久性（Durability）：
+事务完成后，事务对数据库的所有更新将被保存到数据库，不能回滚。
+
+==============================================================================================
+==============================================================================================
+
+二、事务的并发问题
+1、脏读：
+事务A读取了事务B更新的数据，然后B回滚操作，那么A读取到的数据是脏数据
+2、不可重复读：
+事务A多次读取同一数据，事务 B 在事务A多次读取的过程中，对数据作了更新并提交，导致事务A多次读取同一数据时，结果 不一致。
+3、幻读：
+系统管理员A将数据库中所有学生的成绩从具体分数改为ABCDE等级，但是系统管理员B就在这个时候插入了一条具体分数的记录，当系统管理员A改结束后发现还有一条记录没有改过来，就好像发生了幻觉一样，这就叫幻读。
+
+小结：
+不可重复读的和幻读很容易混淆，不可重复读侧重于修改，幻读侧重于新增或删除。
+解决不可重复读的问题只需锁住满足条件的行，解决幻读需要锁表
+
+==============================================================================================
+==============================================================================================
+
+三、MySQL事务隔离级别
+事务隔离级别					脏读	不可重复读	幻读
+读未提交（read-uncommitted）	是		是			是
+不可重复读（read-committed）	否		是			是
+可重复读（repeatable-read）		否		否			是
+串行化（serializable）			否		否			否
+
+==============================================================================================
+==============================================================================================
+查询隔离级别 
+select @@tx_isolation;
+设置事务隔离级别，需要退出MySQL再重新登录才能看到隔离级别的变化
+
+设置隔离级别 
+set [global|session] transaction isolation level 级别字符串;  
+==============================================================================================
+==============================================================================================
+CREATE TABLE `account` (
+  `id` int(11) NOT NULL,
+  `name` varchar(200) CHARACTER SET utf8 NOT NULL,
+  `balance` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `account` ADD PRIMARY KEY (`id`);
+
+INSERT INTO `account` (`id`, `name`, `balance`) VALUES (1, 'lilei', 450), (2, 'hanmei', 16000), (3, 'lucy', 2400);
+
+==============================================================================================
+==============================================================================================
+实验1:读未提交（read-uncommitted）
+
+session1:
+set session transaction isolation level read uncommitted;
+select @@tx_isolation;
++------------------+
+| @@tx_isolation   |
++------------------+
+| READ-UNCOMMITTED |
++------------------+
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     450 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+
+session2:
+set session transaction isolation level read uncommitted;
+update account set balance = balance -50 where id =1;
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     400 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+
+session1:
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     400 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+update account set balance = balance-50 where id =1;
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     350 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+
+session2:
+rollback;
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     350 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+问题:session2因为某种原因回滚，所有的操作都将会被撤销，session1查询到的数据其实就是脏数据,可以看到多扣除了50
+
+
+==============================================================================================
+实验2:不可重复读（read-committed）
+use test
+truncate account;
+INSERT INTO `account` (`id`, `name`, `balance`) VALUES (1, 'lilei', 450), (2, 'hanmei', 16000), (3, 'lucy', 2400);
+
+session1:
+set session transaction isolation level read committed;
+select @@tx_isolation;
++------------------+
+| @@tx_isolation   |
++------------------+
+| READ-COMMITTED |
++------------------+
+begin;
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     450 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
+
+session2:
+set session transaction isolation level read committed;
+begin;
+update account set balance = balance-50 where id =1;
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     400 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+
+session1:
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     450 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+
+session2:
+commit;
+
+session1:
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     400 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+
+==============================================================================================
+实验3:可重复读（repeatable-read）
+
+session1:
+set session transaction isolation level repeatable read;
+select @@tx_isolation;
++-----------------+
+| @@tx_isolation  |
++-----------------+
+| REPEATABLE-READ |
++-----------------+
+begin;
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     400 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+
+session2:
+set session transaction isolation level repeatable read;
+update account set balance = balance-50 where id =1;
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     350 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+commit;
+
+session1:
+可重重复读:
+可以看到虽然数据已经被在session2被修改,但是sesssion1读取到的还是之前的数据,
+这种数据在同一个事务中多次读取结果不变的情况就是可重复度
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     400 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+值仍然是400,说明select的时候数据的版本没变,仍然是是session1中的数据版本
+
+update account set balance = balance-50 where id =1;
+mysql> select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     300 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+值居然是300,说明insert/update/delete时候数据版本被更新到session2的版本
+
+可重复读的隔离级别下使用了MVCC机制:
+select操作不会更新版本号，是快照读（历史版本）
+insert、update和delete会更新版本号，是当前读（当前版本）
+
+session2:
+begin;
+insert into account values(4, 'lily',700);
+commit;
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     350 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
+|  4 | lily   |     700 |
++----+--------+---------+
+
+session1:
+第一种幻读:以为表里没有数据，其实数据已经存在了，傻乎乎的提交后，才发现数据冲突了。
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     300 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+insert into account values(4, 'yyyyyyy',900);
+ERROR 1062 (23000): Duplicate entry '4' for key 'PRIMARY' //
+select * from account;                                                                      
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     300 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
++----+--------+---------+
+第二种幻读:update居然出来条数据吓死宝宝了
+update account set balance =1234 where id=4;
+select * from account;
++----+--------+---------+
+| id | name   | balance |
++----+--------+---------+
+|  1 | lilei  |     300 |
+|  2 | hanmei |   16000 |
+|  3 | lucy   |    2400 |
+|  4 | lily   |    1234 |
++----+--------+---------+
+==============================================================================================
+实验4:串行化（serializable）
+session1:
+set session transaction isolation level serializable;
+start transaction;
+select * from account;
++------+--------+---------+
+| id   | name   | balance |
++------+--------+---------+
+|    1 | lilei  |   10000 |
+|    2 | hanmei |   10000 |
+|    3 | lucy   |   10000 |
+|    4 | lily   |   10000 |
++------+--------+---------+
+
+session2:
+set session transaction isolation level serializable;
+start transaction;
+insert into account values(5,'tom',0);
+ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction
+mysql中事务隔离级别为serializable时会锁表，因此不会出现幻读的情况，这种隔离级别并发性极低，开发中很少会用到。
+

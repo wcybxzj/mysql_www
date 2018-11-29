@@ -1,0 +1,87 @@
+mysql的autocommit详解
+
+1.自动提交默认是开始的
+
+2.实验的表结构:
+create table tab_kx(a int auto_increment,primary key(a));
+create table tab_kx2(a int auto_increment,primary key(a));
+
+3.实验1:
+==========================================================
+step1:
+session1:
+set autocommit=0;
+show variables like '%autocommit%';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| autocommit    | OFF   |
++---------------+-------+
+==========================================================
+step2:
+session2:
+show variables like '%autocommit%';//默认是开启的
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| autocommit    | ON    |
++---------------+-------+
+==========================================================
+step3:
+session1:
+在session1，对tab_kx插入三行数据但不提交：
+INSERT INTO `tab_kx` (`a`) VALUES (NULL);
+INSERT INTO `tab_kx` (`a`) VALUES (NULL);
+INSERT INTO `tab_kx` (`a`) VALUES (NULL);
+
+select * from tab_kx;
++---+
+| a |
++---+
+| 1 |
+| 2 |
+| 3 |
++---+
+
+mysql> select * from tab_kx2;
+Empty set (0.00 sec)
+==========================================================
+step4:
+session2:
+此时查看session2是否可以看到这三行数据：
+mysql> select * from tab_kx;
+Empty set (0.00 sec)
+
+INSERT INTO `tab_kx` (`a`) VALUES (NULL);
+mysql> select * from tab_kx;
++---+
+| a |
++---+
+| 4 |
++---+
+==========================================================
+step5:
+session1:
+mysql> select * from tab_kx;
++---+
+| a |
++---+
+| 1 |
+| 2 |
+| 3 |
++---+
+
+commit;
+==========================================================
+step6:
+session2:
+
+mysql> select * from tab_kx;
++---+
+| a |
++---+
+| 1 |
+| 2 |
+| 3 |
+| 4 |
++---+
